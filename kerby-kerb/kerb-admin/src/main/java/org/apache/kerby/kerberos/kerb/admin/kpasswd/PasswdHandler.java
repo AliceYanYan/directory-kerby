@@ -50,6 +50,7 @@ public abstract class PasswdHandler {
         requestMessage.putInt(request.length());
         requestMessage.put(request.getBytes());
         requestMessage.flip();
+        /** replace with encoding passwdRequest*/
 
         try {
             sendMessage(passwdRequest, requestMessage);
