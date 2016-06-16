@@ -19,60 +19,77 @@
  */
 package org.apache.kerby.kerberos.kerb.admin.kpasswd.request;
 
+import org.apache.kerby.kerberos.kerb.KrbException;
 import org.apache.kerby.kerberos.kerb.admin.tool.PasswdReq;
+import org.apache.kerby.kerberos.kerb.ccache.Credential;
+import org.apache.kerby.kerberos.kerb.ccache.CredentialCache;
 import org.apache.kerby.kerberos.kerb.common.EncryptionUtil;
 import org.apache.kerby.kerberos.kerb.transport.KrbTransport;
+import org.apache.kerby.kerberos.kerb.type.EncKrbPrivPart;
 import org.apache.kerby.kerberos.kerb.type.KerberosTime;
+import org.apache.kerby.kerberos.kerb.type.KrbPriv;
+import org.apache.kerby.kerberos.kerb.type.ap.ApOption;
 import org.apache.kerby.kerberos.kerb.type.ap.ApOptions;
 import org.apache.kerby.kerberos.kerb.type.ap.ApReq;
 import org.apache.kerby.kerberos.kerb.type.ap.Authenticator;
-import org.apache.kerby.kerberos.kerb.type.base.EncryptedData;
-import org.apache.kerby.kerberos.kerb.type.base.EncryptionKey;
-import org.apache.kerby.kerberos.kerb.type.base.KeyUsage;
-import org.apache.kerby.kerberos.kerb.type.base.PrincipalName;
+import org.apache.kerby.kerberos.kerb.type.base.*;
+import org.apache.kerby.kerberos.kerb.type.kdc.EncAsRepPart;
+import org.apache.kerby.kerberos.kerb.type.ticket.TgtTicket;
+import org.apache.kerby.kerberos.kerb.type.ticket.Ticket;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.nio.ByteBuffer;
 
 /**
- * There is only one kind of password request,
- * that is the change password request.
+ * Password request deals with change password and set password.
+ * However, change password does not care about original password.
+ * Therefore, only one kind of password requst is enough.
  * 'client' means passwordClient in this file.
  * Not exactly the one who actually need the password changed.
  */
 public class PasswdRequest {
     private KrbTransport transport;
+    private ByteBuffer message;
 
+    private TgtTicket tgt;
     private String clientName; //client name in its principal
     private String clientRealm; //where client registered
 
+    private boolean isTarget; //true: client is target; false: client is not target
+    private String targetName; //source which ask for change password, not the passwd client.
+    private String targetRealm; //source which ask for change password.
+    private String newPassword; //new password
 
-
-
-
-    /*private String sourcePrincipal; //source which ask for change password, not really the passwd client.
-    private String sourceRealm; //source which ask for change password.
-    private String newPassword; // new password
-    */
 
     private ApReq apReq;
-    //private PrivMessage privMessage;
-    private PasswdReq passwdReq; //later when Priv_Message finish, change it into PrivMessage
+    private KrbPriv privMessage;
+    private InetAddress senderAddress;
 
-    public void setApReq(ApReq apReq) {
-        this.apReq = apReq;
+    public PasswdRequest(TgtTicket tgt) throws KrbException {
+        this.tgt = tgt;
+        isTarget = true;
     }
 
-    public ApReq getApReq() {
+    public void setIsTarget(boolean isTarget) {
+        this.isTarget = isTarget;
+    }
+    public ApReq getApReq() throws KrbException {
         if (this.apReq == null) {
             this.apReq = makeApReq();
         }
         return this.apReq;
     }
 
-    public void setpasswdReq(PasswdReq passwdReq) {
-        this.passwdReq = passwdReq;
+    public void setPrivMessage(KrbPriv privMessage) {
+        this.privMessage = privMessage;
     }
 
-    public PasswdReq getPasswdReq() {
-        return passwdReq;
+    public KrbPriv getPrivMessage() throws KrbException {
+        if (this.privMessage == null) {
+            this.privMessage = makePrivMessage();
+        }
+        return this.privMessage;
     }
     public void setTransport(KrbTransport transport) {
         this.transport = transport;
@@ -82,22 +99,38 @@ public class PasswdRequest {
         return transport;
     }
 
-    public void process() {
+    public void process() throws KrbException, IOException {
+        makeApReq();
+        makePrivMessage();
 
+        //encode messageLength, protocolVersionNumber, apReq and privMessage
+        int messageLength = 4 + 4 + apReq.encodingLength() + privMessage.encodingLength();
+        this.message = ByteBuffer.allocate(messageLength);
+        this.message.putInt(messageLength);
+        this.message.putInt(5); //version number
+        this.message.put(apReq.encode());
+        this.message.put(privMessage.encode());
+        this.message.flip();
     }
 
-    private ApReq makeApReq() {
+    public ByteBuffer getMessage() {
+        return message;
+    }
+
+    private ApReq makeApReq() throws KrbException {
         ApReq apReq = new ApReq();
 
+        apReq.setMsgType(KrbMessageType.AP_REQ);
+        ApOptions apOptions = new ApOptions();
+        apOptions.setFlag(ApOption.USE_SESSION_KEY);
+        apReq.setApOptions(apOptions);
+        apReq.setTicket(tgt.getTicket());
         Authenticator authenticator = makeAuthenticator();
         EncryptionKey sessionKey = tgt.getSessionKey();
-        EncryptedData authnData = EncryptionUtil.seal(authenticator,
-            sessionKey, KeyUsage.TGS_REQ_AUTH);
-        apReq.setEncryptedAuthenticator(authnData);
+        EncryptedData encAuthData = EncryptionUtil.seal(authenticator,
+            sessionKey, KeyUsage.AP_REQ_AUTH);
+        apReq.setEncryptedAuthenticator(encAuthData);
         apReq.setAuthenticator(authenticator);
-        apReq.setTicket(tgt.getTicket());
-        ApOptions apOptions = new ApOptions();
-        apReq.setApOptions(apOptions);
 
         return apReq;
     }
@@ -105,17 +138,83 @@ public class PasswdRequest {
     private Authenticator makeAuthenticator() {
         Authenticator authenticator = new Authenticator();
         authenticator.setAuthenticatorVno(5);
-        authenticator.setCname(new PrincipalName(clientName)); // client's principal identifier
+        PrincipalName cn = new PrincipalName(clientName);
+        cn.setRealm(clientRealm);
+        authenticator.setCname(cn); // client's principal identifier
         authenticator.setCrealm(clientRealm);
         authenticator.setCtime(KerberosTime.now());
         authenticator.setCusec(0);
         authenticator.setSubKey(tgt.getSessionKey());
 
-        KdcReqBody reqBody = getReqBody();
-        CheckSum checksum = CheckSumUtil.seal(reqBody, null,
-            tgt.getSessionKey(), KeyUsage.TGS_REQ_AUTH_CKSUM);
-        authenticator.setCksum(checksum);
-
         return authenticator;
+    }
+
+    private KrbPriv makePrivMessage() throws KrbException {
+        /** targetName and targetRealm is choosable.
+         *  consider change the makePrivMessage function into a new class.
+         */
+        KrbPriv privMessage = new KrbPriv();
+        privMessage.setMsgType(KrbMessageType.KRB_PRIV);
+
+        EncKrbPrivPart encKrbPrivPart =  new EncKrbPrivPart();
+        byte[] userData = getUserData();
+        encKrbPrivPart.setUserData(userData);
+        encKrbPrivPart.setSAddress(new HostAddress(senderAddress));
+        //encKrbPrivPart.setTimeStamp(KerberosTime.now());
+        //encKrbPrivPart.setUsec(0);
+        privMessage.setEncPart(encKrbPrivPart);
+        EncryptedData encryptedData = EncryptionUtil.seal(privMessage,
+            tgt.getSessionKey(), KeyUsage.KRB_PRIV_ENCPART);
+        privMessage.setEncryptedEncPart(encryptedData);
+
+        return privMessage;
+    }
+
+    private byte[] getUserData() {
+        int length = newPassword.length();
+        if (!isTarget) {
+            length += targetName.length();
+            length += targetRealm.length();
+        }
+        ByteBuffer buffer = ByteBuffer.allocate(length);
+        buffer.put(newPassword.getBytes());
+        if (!isTarget) {
+            buffer.put(targetName.getBytes());
+            buffer.put(targetRealm.getBytes());
+        }
+
+        return buffer.array();
+    }
+
+    public void setClientName(String clientName) {
+        this.clientName = clientName;
+    }
+
+    public void setClientRealm(String clientRealm) {
+        this.clientRealm = clientRealm;
+    }
+
+    public void setTargetName(String targetName) {
+        this.targetName = targetName;
+    }
+
+    public String getTargetName() {
+        return targetName;
+    }
+
+    public void setTargetRealm(String targetRealm) {
+        this.targetRealm = targetRealm;
+    }
+
+    public String getTargetRealm() {
+        return targetRealm;
+    }
+
+    public void setNewPassword(String newPassword) {
+        this.newPassword = newPassword;
+    }
+
+    public void setSenderAddress(InetAddress senderAddress) {
+        this.senderAddress = senderAddress;
     }
 }

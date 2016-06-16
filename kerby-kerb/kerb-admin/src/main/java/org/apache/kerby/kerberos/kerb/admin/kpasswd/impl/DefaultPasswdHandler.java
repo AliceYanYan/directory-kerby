@@ -35,7 +35,7 @@ public class DefaultPasswdHandler extends PasswdHandler {
      * and use this.handleRequest to receive message.
      */
     @Override
-    public void handleRequest(PasswdRequest passwdRequest) throws KrbException {
+    public void handleRequest(PasswdRequest passwdRequest) throws KrbException, IOException {
         /** super is used to send messsage*/
         super.handleRequest(passwdRequest);
 
