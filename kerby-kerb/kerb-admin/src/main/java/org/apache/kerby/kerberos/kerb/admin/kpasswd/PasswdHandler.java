@@ -42,18 +42,19 @@ public abstract class PasswdHandler {
      * @param passwdRequest The password server request
      * @throws KrbException e
      */
-    public void handleRequest(PasswdRequest passwdRequest) throws KrbException {
+    public void handleRequest(PasswdRequest passwdRequest) throws KrbException, IOException {
         passwdRequest.process();
 
-        String request = "Client request change password.";
-        ByteBuffer requestMessage = ByteBuffer.allocate(request.length() + 4);
-        requestMessage.putInt(request.length());
-        requestMessage.put(request.getBytes());
-        requestMessage.flip();
+        String request = "after password request process.";
+        System.out.println(request);
+        //ByteBuffer requestMessage = ByteBuffer.allocate(request.length() + 4);
+        //requestMessage.putInt(request.length());
+        //requestMessage.put(request.getBytes());
+        //requestMessage.flip();
         /** replace with encoding passwdRequest*/
 
         try {
-            sendMessage(passwdRequest, requestMessage);
+            sendMessage(passwdRequest, passwdRequest.getMessage());
         } catch (IOException e) {
             throw new KrbException("sending message failed", e);
         }

@@ -24,8 +24,11 @@ import org.apache.kerby.kerberos.kerb.admin.kpasswd.PasswdClient;
 import org.apache.kerby.kerberos.kerb.admin.kpasswd.PasswdConfig;
 import org.apache.kerby.kerberos.kerb.admin.kpasswd.PasswdHandler;
 import org.apache.kerby.kerberos.kerb.admin.kpasswd.PasswdUtil;
+import org.apache.kerby.kerberos.kerb.admin.kpasswd.command.ChangepwCommand;
+import org.apache.kerby.kerberos.kerb.admin.kpasswd.command.KpasswdCommand;
 import org.apache.kerby.kerberos.kerb.admin.kpasswd.impl.DefaultPasswdHandler;
 import org.apache.kerby.kerberos.kerb.admin.kpasswd.request.PasswdRequest;
+import org.apache.kerby.kerberos.kerb.ccache.CredentialCache;
 import org.apache.kerby.kerberos.kerb.transport.KrbNetwork;
 import org.apache.kerby.kerberos.kerb.transport.KrbTransport;
 import org.apache.kerby.kerberos.kerb.transport.TransportPair;
@@ -33,6 +36,7 @@ import org.apache.kerby.util.OSUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Scanner;
 
 /**
  * A running tool for password client.
@@ -47,9 +51,14 @@ public class PasswdClientTool {
         ? "bin\\kpasswdClient.cmd" : "sh bin/kpasswdClient.sh")
         + " conf\n";
 
-    private static final String LEGAL_COMMANDS = "Legal functions are remaining to construct...\n";
+    private static final String LEGAL_COMMANDS = "Available commands are: "
+        + "\n"
+        + "change_password, changepw\n"
+        + "                         Change password\n"
+        + "//set_password, setpw\n"
+        + "//                         Set password\n";
 
-    public static void main(String[] args) throws KrbException {
+    public static void main(String[] args) throws KrbException, IOException {
 
         if (args.length != 1) {
             System.err.println(USAGE);
@@ -68,21 +77,35 @@ public class PasswdClientTool {
 
         passwdClient.init();
         System.out.println("password client init successful!");
-        System.out.print(LEGAL_COMMANDS);
 
-        PasswdHandler passwdHandler = new DefaultPasswdHandler();
-        PasswdRequest passwdRequest = new PasswdRequest();
 
-        TransportPair tpair = PasswdUtil.getTransportPair(passwdClient.getSetting());
-        KrbNetwork network = new KrbNetwork();
-        network.setSocketTimeout(passwdClient.getSetting().getTimeout());
-        KrbTransport transport;
-        try {
-            transport = network.connect(tpair);
-        } catch (IOException e) {
-            throw new KrbException("Failed to create transport", e);
+        System.out.println("enter \"command\" to see legal commands.");
+
+        try (Scanner scanner = new Scanner(System.in, "UTF-8")) {
+            String input = scanner.nextLine();
+
+            while (!(input.equals("quit") || input.equals("exit") || input.equals("q"))) {
+                execute(passwdClient, input);
+                input = scanner.nextLine();
+            }
         }
-        passwdRequest.setTransport(transport);
-        passwdHandler.handleRequest(passwdRequest);
+    }
+
+    private static void execute(PasswdClient passwdClient, String input) throws KrbException, IOException {
+        input = input.trim();
+        if (input.startsWith("command")) {
+            System.out.println(LEGAL_COMMANDS);
+            return;
+        }
+
+        KpasswdCommand executor = null;
+
+        if (input.startsWith("change_password") || input.startsWith("changepw")) {
+            executor = new ChangepwCommand(passwdClient);
+        } else {
+            System.out.println(LEGAL_COMMANDS);
+            return;
+        }
+        executor.execute(input);
     }
 }
