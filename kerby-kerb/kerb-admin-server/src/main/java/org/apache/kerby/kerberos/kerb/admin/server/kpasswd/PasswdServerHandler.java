@@ -108,7 +108,7 @@ public class PasswdServerHandler {
         }
 
         //check the initial flag
-        if(!ticket.getEncPart().getFlags().isInitial()) {
+        if (!ticket.getEncPart().getFlags().isInitial()) {
             throw new KrbException("krb5-kpasswd-initial-flag-needed");
         }
 

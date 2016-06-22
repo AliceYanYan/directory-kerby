@@ -19,7 +19,6 @@
  */
 package org.apache.kerby.kerberos.kerb.admin.server.kpasswd.impl;
 
-import org.apache.kerby.KOptions;
 import org.apache.kerby.kerberos.kerb.KrbException;
 import org.apache.kerby.kerberos.kerb.admin.server.kadmin.AdminServerContext;
 import org.apache.kerby.kerberos.kerb.admin.server.kadmin.AdminServerSetting;
@@ -81,7 +80,8 @@ public class DefaultInternalPasswdServerImpl extends AbstractInternalPasswdServe
         KrbClient krbClient = PasswdServerUtil.getKrbClient(
                             passwdServerContext.getPasswdServerSetting().getKrbConfig());
         krbClient.init();
-        TgtTicket tgtTicket = PasswdServerUtil.getTgtTicket(krbClient, new KOptions());
+        TgtTicket tgtTicket = PasswdServerUtil.getTgtTicket(
+                            krbClient, "kpasswordClient", "123456");
         /** set service key.
          *  The tgt session key between kpasswd server and kdc
          *  is the service key of kpasswd service.

@@ -52,5 +52,10 @@
       <artifactId>kerb-common</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.kerby</groupId>
+      <artifactId>client-tool</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 </project>

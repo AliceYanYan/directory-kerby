@@ -19,7 +19,6 @@
  */
 package org.apache.kerby.kerberos.kerb.admin.kpasswd;
 
-import org.apache.kerby.KOptions;
 import org.apache.kerby.kerberos.kerb.KrbException;
 import org.apache.kerby.kerberos.kerb.client.KrbClient;
 import org.apache.kerby.kerberos.kerb.client.KrbConfig;
@@ -166,10 +165,11 @@ public final class PasswdUtil {
         return krbClient;
     }
 
-    public static TgtTicket getTgtTicket(KrbClient krbClient, KOptions kOptions) {
+    public static TgtTicket getTgtTicket(KrbClient krbClient, String principal,
+                                         String password) {
         TgtTicket tgtTicket = null;
         try {
-            krbClient.requestTgt(kOptions);
+            krbClient.requestTgt(principal, password);
         } catch (KrbException e) {
             System.err.println("Requst Tgt ticket failed: " + e.getMessage());
             System.exit(1);

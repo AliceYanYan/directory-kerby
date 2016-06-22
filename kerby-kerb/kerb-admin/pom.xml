@@ -42,5 +42,10 @@
       <artifactId>kerby-xdr</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.kerby</groupId>
+      <artifactId>kerb-client</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 </project>

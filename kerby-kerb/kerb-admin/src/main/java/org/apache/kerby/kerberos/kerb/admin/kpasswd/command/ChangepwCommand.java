@@ -19,7 +19,6 @@
  */
 package org.apache.kerby.kerberos.kerb.admin.kpasswd.command;
 
-import org.apache.kerby.KOptions;
 import org.apache.kerby.kerberos.kerb.KrbException;
 import org.apache.kerby.kerberos.kerb.admin.kpasswd.PasswdClient;
 import org.apache.kerby.kerberos.kerb.admin.kpasswd.PasswdHandler;
@@ -68,7 +67,7 @@ public class ChangepwCommand extends KpasswdCommand {
         krbClient.init();
 
         //TODO: koptions for client (interact with kdc) not set
-        TgtTicket tgtTicket = PasswdUtil.getTgtTicket(krbClient, new KOptions());
+        TgtTicket tgtTicket = PasswdUtil.getTgtTicket(krbClient, "kpasswordServer", "654321");
         SgtTicket sgtTicket = PasswdUtil.getSgtTicket(krbClient, tgtTicket);
 
         PasswdRequest passwdRequest = new PasswdRequest(sgtTicket);
