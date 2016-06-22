@@ -61,7 +61,7 @@ public class PasswdServerInit {
         try {
             passwdServer.init();
         } catch (KrbException e) {
-            System.err.println("Errors occurred when start admin server:  " + e.getMessage());
+            System.err.println("Errors occurred when start password server:  " + e.getMessage());
             System.exit(2);
         }
         passwdServer.start();

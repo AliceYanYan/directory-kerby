@@ -20,6 +20,7 @@
 package org.apache.kerby.kerberos.kerb.admin.server.kpasswd.impl;
 
 import org.apache.kerby.kerberos.kerb.KrbException;
+import org.apache.kerby.kerberos.kerb.admin.server.kadmin.AdminServerSetting;
 import org.apache.kerby.kerberos.kerb.admin.server.kpasswd.PasswdServerConfig;
 import org.apache.kerby.kerberos.kerb.admin.server.kpasswd.PasswdServerSetting;
 import org.apache.kerby.kerberos.kerb.identity.CacheableIdentityService;

@@ -118,6 +118,10 @@ public class LocalKadminImpl implements LocalKadmin {
         return KrbUtil.makeKadminPrincipal(serverSetting.getKdcRealm()).getName();
     }
 
+    private String getKpasswdPrincipal() {
+        return KrbUtil.makeKpasswdPrincipal(serverSetting.getKdcRealm()).getName();
+    }
+
     @Override
     public void checkBuiltinPrincipals() throws KrbException {
         String tgsPrincipal = getTgsPrincipal();
@@ -147,6 +151,15 @@ public class LocalKadminImpl implements LocalKadmin {
             addPrincipal(kadminPrincipal);
         } else {
             String errorMsg = "The kadmin principal already exists in backend.";
+            LOG.error(errorMsg);
+            throw new KrbException(errorMsg);
+        }
+
+        String kpasswdPrincipal = getKpasswdPrincipal();
+        if (backend.getIdentity(kpasswdPrincipal) == null) {
+            addPrincipal(kpasswdPrincipal);
+        } else {
+            String errorMsg = "The kpasswd principal already exists in backend.";
             LOG.error(errorMsg);
             throw new KrbException(errorMsg);
         }

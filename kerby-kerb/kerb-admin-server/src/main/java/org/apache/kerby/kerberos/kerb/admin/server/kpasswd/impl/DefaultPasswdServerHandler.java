@@ -19,6 +19,7 @@
  */
 package org.apache.kerby.kerberos.kerb.admin.server.kpasswd.impl;
 
+import org.apache.kerby.kerberos.kerb.admin.server.kadmin.AdminServerContext;
 import org.apache.kerby.kerberos.kerb.admin.server.kpasswd.PasswdServerContext;
 import org.apache.kerby.kerberos.kerb.admin.server.kpasswd.PasswdServerHandler;
 import org.apache.kerby.kerberos.kerb.transport.KrbTransport;
@@ -33,8 +34,9 @@ public class DefaultPasswdServerHandler extends PasswdServerHandler implements R
     private static Logger logger = LoggerFactory.getLogger(DefaultPasswdServerHandler.class);
     private final KrbTransport transport;
 
-    public DefaultPasswdServerHandler(PasswdServerContext passwdServerContext, KrbTransport transport) {
-        super(passwdServerContext);
+    public DefaultPasswdServerHandler(PasswdServerContext passwdServerContext,
+                AdminServerContext adminServerContext, KrbTransport transport) {
+        super(passwdServerContext, adminServerContext);
         this.transport  = transport;
     }
 
@@ -62,8 +64,21 @@ public class DefaultPasswdServerHandler extends PasswdServerHandler implements R
         InetAddress clientAddress = transport.getRemoteAddress();
 
         try {
-            ByteBuffer krbResponse = handleMessage(message, clientAddress);
-            transport.sendMessage(krbResponse);
+            ByteBuffer serverResponse = handleMessage(message, clientAddress);
+            ByteBuffer responseMessage = null;
+            if (transport.isTcp()) {
+                //plus a 4 bytes message length as head
+                int tcpMessageLength = serverResponse.capacity() + 4;
+                responseMessage = ByteBuffer.allocate(tcpMessageLength);
+                responseMessage.putInt(tcpMessageLength);
+            } else {
+                message = ByteBuffer.allocate(serverResponse.capacity());
+            }
+            message.put(serverResponse);
+            message.flip();
+
+            transport.sendMessage(responseMessage);
+            System.out.println("password server sent the response message.");
         } catch (Exception e) {
             transport.release();
             logger.error("Error occured while processing request:", e);

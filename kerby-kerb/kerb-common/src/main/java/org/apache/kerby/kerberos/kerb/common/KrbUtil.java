@@ -52,6 +52,16 @@ public class KrbUtil {
         return new PrincipalName(nameString, NameType.NT_PRINCIPAL);
     }
 
+    /**
+     * Construct kadmin principal name.
+     * @param realm The realm
+     * @return principal
+     */
+    public static PrincipalName makeKpasswdPrincipal(String realm) { //TODO: check the realm
+        String nameString = "kadmin/changepw" + "@" + realm;
+        return new PrincipalName(nameString, NameType.NT_PRINCIPAL);
+    }
+
     public static boolean pricipalCompareIgnoreRealm(PrincipalName princ1, PrincipalName princ2)
             throws KrbException {
 

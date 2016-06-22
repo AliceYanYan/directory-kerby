@@ -33,6 +33,7 @@ import java.io.File;
  * The implemented Kerberos admin admin API.
  * We add the KdcConfig as a member variable to AdminServer,
  * In order to make it easy to use LocalKadminImpl.
+ * The encrpytion types in local admin need the kdc config.
  * The Kdc Config of corresponding KDC can be read from ConfDir.
  */
 public class AdminServer {

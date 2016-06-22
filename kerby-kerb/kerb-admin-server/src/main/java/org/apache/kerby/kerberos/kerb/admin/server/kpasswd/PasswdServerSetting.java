@@ -21,6 +21,7 @@ package org.apache.kerby.kerberos.kerb.admin.server.kpasswd;
 
 import org.apache.kerby.KOptions;
 import org.apache.kerby.kerberos.kerb.KrbException;
+import org.apache.kerby.kerberos.kerb.client.KrbConfig;
 import org.apache.kerby.kerberos.kerb.identity.backend.BackendConfig;
 
 /**
@@ -30,24 +31,28 @@ public class PasswdServerSetting {
     private final KOptions startupOptions;
     private final PasswdServerConfig passwdServerConfig;
     private final BackendConfig backendConfig;
+    private final KrbConfig krbConfig;
 
     /**
      * PasswdServerSetting constructor
      * @param startupOptions startup options
      * @param config passwd configuration
      * @param backendConfig backend configuration
+     * @param krbConfig
      */
     public PasswdServerSetting(KOptions startupOptions,
-                              PasswdServerConfig config,
-                              BackendConfig backendConfig) {
+                               PasswdServerConfig config,
+                               BackendConfig backendConfig,
+                               KrbConfig krbConfig) {
         this.startupOptions = startupOptions;
         this.passwdServerConfig = config;
         this.backendConfig = backendConfig;
+        this.krbConfig = krbConfig;
     }
 
     public PasswdServerSetting(PasswdServerConfig passwdServerConfig,
-                              BackendConfig backendConfig) {
-        this(new KOptions(), passwdServerConfig, backendConfig);
+                              BackendConfig backendConfig, KrbConfig krbConfig) {
+        this(new KOptions(), passwdServerConfig, backendConfig, krbConfig);
     }
 
     /**
@@ -64,6 +69,10 @@ public class PasswdServerSetting {
      */
     public BackendConfig getBackendConfig() {
         return backendConfig;
+    }
+
+    public KrbConfig getKrbConfig() {
+        return krbConfig;
     }
 
     public String getPasswdHost() {

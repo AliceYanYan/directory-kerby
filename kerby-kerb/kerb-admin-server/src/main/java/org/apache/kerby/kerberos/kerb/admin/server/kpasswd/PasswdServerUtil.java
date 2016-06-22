@@ -19,11 +19,18 @@
  */
 package org.apache.kerby.kerberos.kerb.admin.server.kpasswd;
 
+import org.apache.kerby.KOptions;
 import org.apache.kerby.kerberos.kerb.KrbException;
+import org.apache.kerby.kerberos.kerb.client.KrbClient;
+import org.apache.kerby.kerberos.kerb.client.KrbConfig;
 import org.apache.kerby.kerberos.kerb.identity.backend.BackendConfig;
 import org.apache.kerby.kerberos.kerb.identity.backend.IdentityBackend;
 import org.apache.kerby.kerberos.kerb.identity.backend.MemoryIdentityBackend;
 import org.apache.kerby.kerberos.kerb.transport.TransportPair;
+import org.apache.kerby.kerberos.kerb.type.base.EncryptionKey;
+import org.apache.kerby.kerberos.kerb.type.base.EncryptionType;
+import org.apache.kerby.kerberos.kerb.type.ticket.SgtTicket;
+import org.apache.kerby.kerberos.kerb.type.ticket.TgtTicket;
 
 import java.io.File;
 import java.io.IOException;
@@ -65,7 +72,7 @@ public final class PasswdServerUtil {
      * @throws KrbException e.
      */
     public static BackendConfig getBackendConfig(File confDir) throws KrbException {
-        File backendConfigFile = new File(confDir, "backend.conf");
+        File backendConfigFile = new File(confDir, "kpasswdBackend.conf");
         if (backendConfigFile.exists()) {
             BackendConfig backendConfig = new BackendConfig();
             try {
@@ -75,6 +82,28 @@ public final class PasswdServerUtil {
                         + backendConfigFile.getAbsolutePath());
             }
             return backendConfig;
+        }
+
+        return null;
+    }
+
+    /**
+     * Get krb5 configuration
+     * @param confDir configuration directory
+     * @return passwd configuration
+     * @throws KrbException e.
+     */
+    public static KrbConfig getKrbConfig(File confDir) throws KrbException {
+        File krbConfFile = new File(confDir, "krb5.conf");
+        if (krbConfFile.exists()) {
+            KrbConfig krbConfig = new KrbConfig();
+            try {
+                krbConfig.addKrb5Config(krbConfFile);
+            } catch (IOException e) {
+                throw new KrbException("Can not load the krb5 configuration file "
+                    + krbConfFile.getAbsolutePath());
+            }
+            return krbConfig;
         }
 
         return null;
@@ -138,5 +167,56 @@ public final class PasswdServerUtil {
         }
 
         return result;
+    }
+
+    public static EncryptionKey getServiceKey(PasswdServerContext passwdServerContext,
+                             EncryptionType encryptionType, int kvno) throws KrbException {
+        EncryptionKey serviceKey = passwdServerContext.getServiceKey();
+        if (serviceKey.getKeyType() != encryptionType || serviceKey.getKvno() != kvno) {
+            throw new KrbException("Service key does not match.");
+        }
+        return serviceKey;
+    }
+
+    public static KrbClient getKrbClient(File confDir) throws KrbException {
+        KrbClient krbClient = null;
+        if (confDir != null) {
+            krbClient = new KrbClient(confDir);
+        } else {
+            krbClient = new KrbClient();
+        }
+        return krbClient;
+    }
+
+    public static KrbClient getKrbClient(KrbConfig krbConfig) throws KrbException {
+        KrbClient krbClient = null;
+        if (krbConfig != null) {
+            krbClient = new KrbClient(krbConfig);
+        } else {
+            krbClient = new KrbClient();
+        }
+        return krbClient;
+    }
+
+    public static TgtTicket getTgtTicket(KrbClient krbClient, KOptions kOptions) {
+        TgtTicket tgtTicket = null;
+        try {
+            krbClient.requestTgt(kOptions);
+        } catch (KrbException e) {
+            System.err.println("Requst Tgt ticket failed: " + e.getMessage());
+            System.exit(1);
+        }
+        return tgtTicket;
+    }
+
+    public static SgtTicket getSgtTicket(KrbClient krbClient, TgtTicket tgtTicket) {
+        SgtTicket sgtTicket = null;
+        try {
+            krbClient.requestSgt(tgtTicket, krbClient.getKrbConfig().getKdcHost());
+        } catch (KrbException e) {
+            System.err.println("Requst Sgt ticket failed: " + e.getMessage());
+            System.exit(2);
+        }
+        return sgtTicket;
     }
 }

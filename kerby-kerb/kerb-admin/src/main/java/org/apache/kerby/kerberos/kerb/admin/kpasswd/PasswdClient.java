@@ -24,6 +24,7 @@ import org.apache.kerby.kerberos.kerb.KrbException;
 import org.apache.kerby.kerberos.kerb.admin.kadmin.remote.AdminOption;
 import org.apache.kerby.kerberos.kerb.admin.kpasswd.impl.DefaultInternalPasswdClient;
 import org.apache.kerby.kerberos.kerb.admin.kpasswd.impl.InternalPasswdClient;
+import org.apache.kerby.kerberos.kerb.client.KrbConfig;
 
 import java.io.File;
 
@@ -33,6 +34,7 @@ import java.io.File;
 public class PasswdClient {
 
     private final PasswdConfig passwdConfig;
+    private final KrbConfig krbConfig; /**use to login to KDC*/
     private final KOptions commonOptions;
     private final PasswdSetting passwdSetting;
 
@@ -44,6 +46,7 @@ public class PasswdClient {
      */
     public PasswdClient() throws KrbException {
         this.passwdConfig = PasswdUtil.getDefaultConfig();
+        this.krbConfig = new KrbConfig();
         this.commonOptions = new KOptions();
         this.passwdSetting = new PasswdSetting(commonOptions, passwdConfig);
     }
@@ -52,8 +55,9 @@ public class PasswdClient {
      * Construct with prepared PasswdConfig.
      * @param passwdConfig The krb config
      */
-    public PasswdClient(PasswdConfig passwdConfig) {
+    public PasswdClient(PasswdConfig passwdConfig, KrbConfig krbConfig) {
         this.passwdConfig = passwdConfig;
+        this.krbConfig = krbConfig;
         this.commonOptions = new KOptions();
         this.passwdSetting = new PasswdSetting(commonOptions, passwdConfig);
     }
@@ -66,6 +70,7 @@ public class PasswdClient {
     public PasswdClient(File confDir) throws KrbException {
         this.commonOptions = new KOptions();
         this.passwdConfig = PasswdUtil.getConfig(confDir);
+        this.krbConfig = PasswdUtil.getKrbConfig(confDir);
         this.passwdSetting = new PasswdSetting(commonOptions, passwdConfig);
     }
     
@@ -152,5 +157,9 @@ public class PasswdClient {
 
     public PasswdConfig getPasswdConfig() {
         return passwdConfig;
+    }
+
+    public KrbConfig getKrbConfig() {
+        return krbConfig;
     }
 }

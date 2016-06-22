@@ -21,10 +21,15 @@ package org.apache.kerby.kerberos.kerb.admin.server.kpasswd;
 
 import org.apache.kerby.KOptions;
 import org.apache.kerby.kerberos.kerb.KrbException;
+import org.apache.kerby.kerberos.kerb.admin.server.kadmin.AdminServerConfig;
+import org.apache.kerby.kerberos.kerb.admin.server.kadmin.AdminServerSetting;
+import org.apache.kerby.kerberos.kerb.admin.server.kadmin.AdminServerUtil;
 import org.apache.kerby.kerberos.kerb.admin.server.kpasswd.impl.DefaultInternalPasswdServerImpl;
 import org.apache.kerby.kerberos.kerb.admin.server.kpasswd.impl.InternalPasswdServer;
+import org.apache.kerby.kerberos.kerb.client.KrbConfig;
 import org.apache.kerby.kerberos.kerb.identity.backend.BackendConfig;
 import org.apache.kerby.kerberos.kerb.identity.backend.IdentityBackend;
+import org.apache.kerby.kerberos.kerb.server.KdcConfig;
 
 import java.io.File;
 
@@ -34,7 +39,9 @@ import java.io.File;
 public class PasswdServer {
     private final PasswdServerConfig passwdServerConfig;
     private final BackendConfig backendConfig;
+    private final KrbConfig krbConfig;
     private final PasswdServerSetting passwdServerSetting;
+    private final AdminServerSetting adminServerSetting;
     private final KOptions startupOptions;
 
     private InternalPasswdServer innerPasswdServer;
@@ -46,12 +53,16 @@ public class PasswdServer {
      * @throws KrbException e
      */
     public PasswdServer(PasswdServerConfig passwdConfig,
-                        BackendConfig backendConfig) throws KrbException {
+                        BackendConfig backendConfig,
+                        KrbConfig krbConfig,
+                        AdminServerSetting adminServerSetting) throws KrbException {
         this.passwdServerConfig = passwdConfig;
         this.backendConfig = backendConfig;
+        this.krbConfig = krbConfig;
         startupOptions = new KOptions();
         passwdServerSetting = new PasswdServerSetting(startupOptions,
-            passwdConfig, backendConfig);
+            passwdConfig, backendConfig, krbConfig);
+        this.adminServerSetting =  adminServerSetting;
     }
 
     /**
@@ -78,9 +89,41 @@ public class PasswdServer {
         tmpBackendConfig.setConfDir(confDir);
         this.backendConfig = tmpBackendConfig;
 
+        KrbConfig tmpKrbConfig =
+            PasswdServerUtil.getKrbConfig(confDir);
+        if (tmpKrbConfig == null) {
+            tmpKrbConfig = new KrbConfig();
+        }
+        this.krbConfig = tmpKrbConfig;
+
         startupOptions = new KOptions();
         passwdServerSetting = new PasswdServerSetting(startupOptions,
-            passwdServerConfig, backendConfig);
+            passwdServerConfig, backendConfig, krbConfig);
+        adminServerSetting = getAdminServerSetting(confDir);
+    }
+
+    private AdminServerSetting getAdminServerSetting(File confDir) throws KrbException {
+        AdminServerConfig adminServerConfig =
+            AdminServerUtil.getAdminServerConfig(confDir);
+        if (adminServerConfig == null) {
+            adminServerConfig = new AdminServerConfig();
+        }
+
+        KdcConfig kdcConfig = AdminServerUtil.getKdcConfig(confDir);
+        if (kdcConfig == null) {
+            kdcConfig = new KdcConfig();
+        }
+
+        BackendConfig backendConfig = AdminServerUtil.getBackendConfig(confDir);
+        if (backendConfig == null) {
+            backendConfig = new BackendConfig();
+        }
+        backendConfig.setConfDir(confDir);
+
+        AdminServerSetting adminServerSetting = new AdminServerSetting(new KOptions(),
+            adminServerConfig, kdcConfig, backendConfig);
+
+        return adminServerSetting;
     }
 
     /**
@@ -89,9 +132,12 @@ public class PasswdServer {
     public PasswdServer() {
         passwdServerConfig = new PasswdServerConfig();
         backendConfig = new BackendConfig();
+        krbConfig = new KrbConfig();
         startupOptions = new KOptions();
         passwdServerSetting = new PasswdServerSetting(startupOptions,
-            passwdServerConfig, backendConfig);
+            passwdServerConfig, backendConfig, krbConfig);
+        adminServerSetting = new AdminServerSetting(new KOptions(), new AdminServerConfig(),
+            new KdcConfig(), new BackendConfig());
     }
 
     /**
@@ -237,7 +283,7 @@ public class PasswdServer {
                 PasswdServerOption.INNER_ADMIN_IMPL);
         } else {
             innerPasswdServer =
-                new DefaultInternalPasswdServerImpl(passwdServerSetting);
+                new DefaultInternalPasswdServerImpl(passwdServerSetting, adminServerSetting);
         }
 
         innerPasswdServer.init();

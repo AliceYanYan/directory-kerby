@@ -27,7 +27,7 @@ import java.io.IOException;
 /**
  * Abstract class of all kpasswd commands
  */
-abstract public class KpasswdCommand {
+public abstract class KpasswdCommand {
     PasswdClient passwdClient;
 
     public KpasswdCommand(PasswdClient passwdClient) {
