@@ -88,7 +88,7 @@ public final class AdminServerUtil {
      * @throws KrbException e.
      */
     public static BackendConfig getBackendConfig(File confDir) throws KrbException {
-        File backendConfigFile = new File(confDir, "backend.conf");
+        File backendConfigFile = new File(confDir, "adminBackend.conf");
         if (backendConfigFile.exists()) {
             BackendConfig backendConfig = new BackendConfig();
             try {

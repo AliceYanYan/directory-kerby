@@ -21,6 +21,7 @@ package org.apache.kerby.kerberos.kerb.type.ticket;
 
 import org.apache.kerby.asn1.type.Asn1Flags;
 
+import static org.apache.kerby.kerberos.kerb.type.ticket.TicketFlag.INITIAL;
 import static org.apache.kerby.kerberos.kerb.type.ticket.TicketFlag.INVALID;
 
 public class TicketFlags extends Asn1Flags {
@@ -35,5 +36,9 @@ public class TicketFlags extends Asn1Flags {
 
     public boolean isInvalid() {
         return isFlagSet(INVALID.getValue());
+    }
+
+    public boolean isInitial() {
+        return isFlagSet(INITIAL.getValue());
     }
 }

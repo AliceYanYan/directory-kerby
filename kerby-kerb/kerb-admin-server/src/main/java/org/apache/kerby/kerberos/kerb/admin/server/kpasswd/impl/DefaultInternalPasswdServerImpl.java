@@ -19,12 +19,18 @@
  */
 package org.apache.kerby.kerberos.kerb.admin.server.kpasswd.impl;
 
+import org.apache.kerby.KOptions;
+import org.apache.kerby.kerberos.kerb.KrbException;
+import org.apache.kerby.kerberos.kerb.admin.server.kadmin.AdminServerContext;
+import org.apache.kerby.kerberos.kerb.admin.server.kadmin.AdminServerSetting;
 import org.apache.kerby.kerberos.kerb.admin.server.kpasswd.PasswdServerContext;
 import org.apache.kerby.kerberos.kerb.admin.server.kpasswd.PasswdServerSetting;
 import org.apache.kerby.kerberos.kerb.admin.server.kpasswd.PasswdServerUtil;
+import org.apache.kerby.kerberos.kerb.client.KrbClient;
 import org.apache.kerby.kerberos.kerb.transport.KdcNetwork;
 import org.apache.kerby.kerberos.kerb.transport.TransportPair;
 import org.apache.kerby.kerberos.kerb.transport.KrbTransport;
+import org.apache.kerby.kerberos.kerb.type.ticket.TgtTicket;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,11 +40,15 @@ import java.util.concurrent.Executors;
  */
 public class DefaultInternalPasswdServerImpl extends AbstractInternalPasswdServer {
     private ExecutorService executor;
-    private PasswdServerContext passwdContext;
+    private PasswdServerContext passwdServerContext;
+    private AdminServerContext adminServerContext;
     private KdcNetwork network;
 
-    public DefaultInternalPasswdServerImpl(PasswdServerSetting passwdSetting) {
+    public DefaultInternalPasswdServerImpl(PasswdServerSetting passwdSetting,
+                                           AdminServerSetting adminServerSetting) {
         super(passwdSetting);
+        adminServerContext = new AdminServerContext(adminServerSetting);
+
     }
 
     @Override
@@ -53,7 +63,7 @@ public class DefaultInternalPasswdServerImpl extends AbstractInternalPasswdServe
             @Override
             protected void onNewTransport(KrbTransport transport) {
                 DefaultPasswdServerHandler passwdHandler =
-                    new DefaultPasswdServerHandler(passwdContext, transport);
+                    new DefaultPasswdServerHandler(passwdServerContext, adminServerContext, transport);
                 executor.execute(passwdHandler);
             }
         };
@@ -64,9 +74,20 @@ public class DefaultInternalPasswdServerImpl extends AbstractInternalPasswdServe
         network.start();
     }
 
-    private void prepareHandler() {
-        passwdContext = new PasswdServerContext(getSetting());
-        passwdContext.setIdentityService(getIdentityService());
+    private void prepareHandler() throws KrbException {
+        passwdServerContext = new PasswdServerContext(getSetting());
+        passwdServerContext.setIdentityService(getIdentityService());
+        //acquire service key from kdc
+        KrbClient krbClient = PasswdServerUtil.getKrbClient(
+                            passwdServerContext.getPasswdServerSetting().getKrbConfig());
+        krbClient.init();
+        TgtTicket tgtTicket = PasswdServerUtil.getTgtTicket(krbClient, new KOptions());
+        /** set service key.
+         *  The tgt session key between kpasswd server and kdc
+         *  is the service key of kpasswd service.
+         */
+        passwdServerContext.setServiceKey(tgtTicket.getSessionKey());
+
     }
 
     @Override

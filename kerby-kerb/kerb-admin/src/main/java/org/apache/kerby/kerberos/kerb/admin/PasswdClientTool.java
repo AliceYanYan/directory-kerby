@@ -22,16 +22,8 @@ package org.apache.kerby.kerberos.kerb.admin;
 import org.apache.kerby.kerberos.kerb.KrbException;
 import org.apache.kerby.kerberos.kerb.admin.kpasswd.PasswdClient;
 import org.apache.kerby.kerberos.kerb.admin.kpasswd.PasswdConfig;
-import org.apache.kerby.kerberos.kerb.admin.kpasswd.PasswdHandler;
-import org.apache.kerby.kerberos.kerb.admin.kpasswd.PasswdUtil;
 import org.apache.kerby.kerberos.kerb.admin.kpasswd.command.ChangepwCommand;
 import org.apache.kerby.kerberos.kerb.admin.kpasswd.command.KpasswdCommand;
-import org.apache.kerby.kerberos.kerb.admin.kpasswd.impl.DefaultPasswdHandler;
-import org.apache.kerby.kerberos.kerb.admin.kpasswd.request.PasswdRequest;
-import org.apache.kerby.kerberos.kerb.ccache.CredentialCache;
-import org.apache.kerby.kerberos.kerb.transport.KrbNetwork;
-import org.apache.kerby.kerberos.kerb.transport.KrbTransport;
-import org.apache.kerby.kerberos.kerb.transport.TransportPair;
 import org.apache.kerby.util.OSUtil;
 
 import java.io.File;

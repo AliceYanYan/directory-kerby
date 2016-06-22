@@ -19,22 +19,20 @@
  */
 package org.apache.kerby.kerberos.kerb.admin.kpasswd.command;
 
+import org.apache.kerby.KOptions;
 import org.apache.kerby.kerberos.kerb.KrbException;
 import org.apache.kerby.kerberos.kerb.admin.kpasswd.PasswdClient;
 import org.apache.kerby.kerberos.kerb.admin.kpasswd.PasswdHandler;
 import org.apache.kerby.kerberos.kerb.admin.kpasswd.PasswdUtil;
 import org.apache.kerby.kerberos.kerb.admin.kpasswd.impl.DefaultPasswdHandler;
 import org.apache.kerby.kerberos.kerb.admin.kpasswd.request.PasswdRequest;
-import org.apache.kerby.kerberos.kerb.ccache.Credential;
-import org.apache.kerby.kerberos.kerb.ccache.CredentialCache;
+import org.apache.kerby.kerberos.kerb.client.KrbClient;
 import org.apache.kerby.kerberos.kerb.transport.KrbNetwork;
 import org.apache.kerby.kerberos.kerb.transport.KrbTransport;
 import org.apache.kerby.kerberos.kerb.transport.TransportPair;
-import org.apache.kerby.kerberos.kerb.type.kdc.EncAsRepPart;
+import org.apache.kerby.kerberos.kerb.type.ticket.SgtTicket;
 import org.apache.kerby.kerberos.kerb.type.ticket.TgtTicket;
-import org.apache.kerby.kerberos.kerb.type.ticket.Ticket;
 
-import java.io.File;
 import java.io.IOException;
 
 /**
@@ -66,26 +64,14 @@ public class ChangepwCommand extends KpasswdCommand {
 
         PasswdHandler passwdHandler = new DefaultPasswdHandler();
 
-        String cacheFile = "krb5_ccache.cc";
-        CredentialCache cCache = new CredentialCache();
-        cCache.load(new File(cacheFile));
+        KrbClient krbClient = PasswdUtil.getKrbClient(passwdClient.getKrbConfig());
+        krbClient.init();
 
-        TgtTicket tgt = null;
-        for (Credential cred : cCache.getCredentials()) {
-            Ticket tkt = cred.getTicket();
-            if (cred.getClientName().getName() == clientPrincipal) {
-                tgt = new TgtTicket(tkt, new EncAsRepPart(), cred.getClientName());
-                break;
-            }
-            //System.out.println("Tkt server name: " + tkt.getSname().getName());
-            //System.out.println("Tkt client name: " + cred.getClientName().getName());
-            //System.out.println("Tkt encrypt type: " + tkt.getEncryptedEncPart().getEType().getName());
-        }
-        if (tgt == null) {
-            throw new KrbException("Can not find tgt ticket");
-        }
+        //TODO: koptions for client (interact with kdc) not set
+        TgtTicket tgtTicket = PasswdUtil.getTgtTicket(krbClient, new KOptions());
+        SgtTicket sgtTicket = PasswdUtil.getSgtTicket(krbClient, tgtTicket);
 
-        PasswdRequest passwdRequest = new PasswdRequest(tgt);
+        PasswdRequest passwdRequest = new PasswdRequest(sgtTicket);
         passwdRequest.setClientName(clientPrincipal);
         passwdRequest.setClientRealm(clientRealm);
         passwdRequest.setNewPassword(newPassword);

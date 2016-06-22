@@ -20,9 +20,6 @@
 package org.apache.kerby.kerberos.kerb.admin.kpasswd.request;
 
 import org.apache.kerby.kerberos.kerb.KrbException;
-import org.apache.kerby.kerberos.kerb.admin.tool.PasswdReq;
-import org.apache.kerby.kerberos.kerb.ccache.Credential;
-import org.apache.kerby.kerberos.kerb.ccache.CredentialCache;
 import org.apache.kerby.kerberos.kerb.common.EncryptionUtil;
 import org.apache.kerby.kerberos.kerb.transport.KrbTransport;
 import org.apache.kerby.kerberos.kerb.type.EncKrbPrivPart;
@@ -33,9 +30,7 @@ import org.apache.kerby.kerberos.kerb.type.ap.ApOptions;
 import org.apache.kerby.kerberos.kerb.type.ap.ApReq;
 import org.apache.kerby.kerberos.kerb.type.ap.Authenticator;
 import org.apache.kerby.kerberos.kerb.type.base.*;
-import org.apache.kerby.kerberos.kerb.type.kdc.EncAsRepPart;
-import org.apache.kerby.kerberos.kerb.type.ticket.TgtTicket;
-import org.apache.kerby.kerberos.kerb.type.ticket.Ticket;
+import org.apache.kerby.kerberos.kerb.type.ticket.SgtTicket;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -51,8 +46,9 @@ import java.nio.ByteBuffer;
 public class PasswdRequest {
     private KrbTransport transport;
     private ByteBuffer message;
+    private int messageLength;
 
-    private TgtTicket tgt;
+    private SgtTicket sgtTicket;
     private String clientName; //client name in its principal
     private String clientRealm; //where client registered
 
@@ -66,8 +62,8 @@ public class PasswdRequest {
     private KrbPriv privMessage;
     private InetAddress senderAddress;
 
-    public PasswdRequest(TgtTicket tgt) throws KrbException {
-        this.tgt = tgt;
+    public PasswdRequest(SgtTicket sgtTicket) throws KrbException {
+        this.sgtTicket = sgtTicket;
         isTarget = true;
     }
 
@@ -99,15 +95,20 @@ public class PasswdRequest {
         return transport;
     }
 
+    public SgtTicket getSgtTicket() {
+        return sgtTicket;
+    }
+
     public void process() throws KrbException, IOException {
         makeApReq();
         makePrivMessage();
 
         //encode messageLength, protocolVersionNumber, apReq and privMessage
-        int messageLength = 4 + 4 + apReq.encodingLength() + privMessage.encodingLength();
+        messageLength = 6 + apReq.encodingLength() + privMessage.encodingLength();
         this.message = ByteBuffer.allocate(messageLength);
-        this.message.putInt(messageLength);
-        this.message.putInt(5); //version number
+        this.message.putShort((short) messageLength); //short type
+        this.message.putShort((short) 5); //version number, short type
+        this.message.putShort((short) apReq.encodingLength());
         this.message.put(apReq.encode());
         this.message.put(privMessage.encode());
         this.message.flip();
@@ -117,6 +118,10 @@ public class PasswdRequest {
         return message;
     }
 
+    public int getMessageLength() {
+        return messageLength;
+    }
+
     private ApReq makeApReq() throws KrbException {
         ApReq apReq = new ApReq();
 
@@ -124,9 +129,9 @@ public class PasswdRequest {
         ApOptions apOptions = new ApOptions();
         apOptions.setFlag(ApOption.USE_SESSION_KEY);
         apReq.setApOptions(apOptions);
-        apReq.setTicket(tgt.getTicket());
+        apReq.setTicket(sgtTicket.getTicket());
         Authenticator authenticator = makeAuthenticator();
-        EncryptionKey sessionKey = tgt.getSessionKey();
+        EncryptionKey sessionKey = sgtTicket.getSessionKey();
         EncryptedData encAuthData = EncryptionUtil.seal(authenticator,
             sessionKey, KeyUsage.AP_REQ_AUTH);
         apReq.setEncryptedAuthenticator(encAuthData);
@@ -144,7 +149,8 @@ public class PasswdRequest {
         authenticator.setCrealm(clientRealm);
         authenticator.setCtime(KerberosTime.now());
         authenticator.setCusec(0);
-        authenticator.setSubKey(tgt.getSessionKey());
+        //authenticator.setSeqNumber(); random choose?
+        authenticator.setSubKey(sgtTicket.getSessionKey());
 
         return authenticator;
     }
@@ -163,14 +169,14 @@ public class PasswdRequest {
         //encKrbPrivPart.setTimeStamp(KerberosTime.now());
         //encKrbPrivPart.setUsec(0);
         privMessage.setEncPart(encKrbPrivPart);
-        EncryptedData encryptedData = EncryptionUtil.seal(privMessage,
-            tgt.getSessionKey(), KeyUsage.KRB_PRIV_ENCPART);
+        EncryptedData encryptedData = EncryptionUtil.seal(encKrbPrivPart,
+            sgtTicket.getSessionKey(), KeyUsage.KRB_PRIV_ENCPART);
         privMessage.setEncryptedEncPart(encryptedData);
 
         return privMessage;
     }
 
-    private byte[] getUserData() {
+    private byte[] getUserData() { //TODO: change to ASN1 encoding!
         int length = newPassword.length();
         if (!isTarget) {
             length += targetName.length();

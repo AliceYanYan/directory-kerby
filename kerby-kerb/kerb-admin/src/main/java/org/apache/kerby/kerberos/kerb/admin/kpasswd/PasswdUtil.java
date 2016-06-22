@@ -19,8 +19,13 @@
  */
 package org.apache.kerby.kerberos.kerb.admin.kpasswd;
 
+import org.apache.kerby.KOptions;
 import org.apache.kerby.kerberos.kerb.KrbException;
+import org.apache.kerby.kerberos.kerb.client.KrbClient;
+import org.apache.kerby.kerberos.kerb.client.KrbConfig;
 import org.apache.kerby.kerberos.kerb.transport.TransportPair;
+import org.apache.kerby.kerberos.kerb.type.ticket.SgtTicket;
+import org.apache.kerby.kerberos.kerb.type.ticket.TgtTicket;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,28 +35,29 @@ import java.util.Map;
 public final class PasswdUtil {
     private PasswdUtil() { }
 
+    private static final String KPASSWD_FILE_NAME = "kpasswdClient.conf";
     private static final String KRB5_FILE_NAME = "kpasswdClient.conf";
     private static final String KRB5_ENV_NAME = "KRB5_CONFIG";
 
     /**
-     * Load krb5.conf from specified conf dir.
+     * Load kpasswd.conf from specified conf dir.
      * @param confDir The conf dir
      * @return PasswdConfig
      * @throws KrbException e
      */
     public static PasswdConfig getConfig(File confDir) throws KrbException {
-        File confFile = new File(confDir, KRB5_FILE_NAME);
+        File confFile = new File(confDir, KPASSWD_FILE_NAME);
         if (!confFile.exists()) {
-            throw new KrbException(KRB5_FILE_NAME + " not found");
+            throw new KrbException(KPASSWD_FILE_NAME + " not found");
         }
 
         if (confFile != null && confFile.exists()) {
-            PasswdConfig adminConfig = new PasswdConfig();
+            PasswdConfig passwdConfig = new PasswdConfig();
             try {
-                adminConfig.addKrb5Config(confFile);
-                return adminConfig;
+                passwdConfig.addKrb5Config(confFile);
+                return passwdConfig;
             } catch (IOException e) {
-                throw new KrbException("Failed to load krb config "
+                throw new KrbException("Failed to load kpasswd config "
                         + confFile.getAbsolutePath());
             }
         }
@@ -60,7 +66,7 @@ public final class PasswdUtil {
     }
 
     /**
-     * Load default krb5.conf
+     * Load default kpasswd.conf
      * @return The PasswdConfig
      * @throws KrbException e
      */
@@ -102,6 +108,31 @@ public final class PasswdUtil {
     }
 
     /**
+     * Load krb5.conf from specified conf dir.
+     * @param confDir The conf dir
+     * @return PasswdConfig
+     * @throws KrbException e
+     */
+    public static KrbConfig getKrbConfig(File confDir) throws KrbException {
+        File confFile = new File(confDir, KRB5_FILE_NAME);
+        if (!confFile.exists()) {
+            throw new KrbException(KRB5_FILE_NAME + " not found");
+        }
+
+        if (confFile != null && confFile.exists()) {
+            KrbConfig krbConfig = new KrbConfig();
+            try {
+                krbConfig.addKrb5Config(confFile);
+                return krbConfig;
+            } catch (IOException e) {
+                throw new KrbException("Failed to load krb5 config "
+                    + confFile.getAbsolutePath());
+            }
+        }
+        return null;
+    }
+
+    /**
      * Get KDC network transport addresses according to krb client setting.
      * @param setting The krb setting
      * @return UDP and TCP addresses pair
@@ -124,4 +155,37 @@ public final class PasswdUtil {
 
         return result;
     }
+
+    public static KrbClient getKrbClient(KrbConfig krbConfig) throws KrbException {
+        KrbClient krbClient = null;
+        if (krbConfig != null) {
+            krbClient = new KrbClient(krbConfig);
+        } else {
+            krbClient = new KrbClient();
+        }
+        return krbClient;
+    }
+
+    public static TgtTicket getTgtTicket(KrbClient krbClient, KOptions kOptions) {
+        TgtTicket tgtTicket = null;
+        try {
+            krbClient.requestTgt(kOptions);
+        } catch (KrbException e) {
+            System.err.println("Requst Tgt ticket failed: " + e.getMessage());
+            System.exit(1);
+        }
+        return tgtTicket;
+    }
+
+    public static SgtTicket getSgtTicket(KrbClient krbClient, TgtTicket tgtTicket) {
+        SgtTicket sgtTicket = null;
+        try {
+            krbClient.requestSgt(tgtTicket, "kadmin/changepw"); //the server principal is determined.
+        } catch (KrbException e) {
+            System.err.println("Requst Sgt ticket failed: " + e.getMessage());
+            System.exit(2);
+        }
+        return sgtTicket;
+    }
+
 }

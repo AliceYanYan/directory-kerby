@@ -20,9 +20,11 @@
 package org.apache.kerby.kerberos.kerb.admin.server.kpasswd;
 
 import org.apache.kerby.kerberos.kerb.identity.IdentityService;
+import org.apache.kerby.kerberos.kerb.type.base.EncryptionKey;
 
 public class PasswdServerContext {
     private final PasswdServerSetting passwdServerSetting;
+    private EncryptionKey serviceKey;
 
     private IdentityService identityService;
 
@@ -48,5 +50,13 @@ public class PasswdServerContext {
 
     public String getPasswdRealm() {
         return passwdServerSetting.getPasswdRealm();
+    }
+
+    public void setServiceKey(EncryptionKey serviceKey) {
+        this.serviceKey = serviceKey;
+    }
+
+    public EncryptionKey getServiceKey() {
+        return serviceKey;
     }
 }
