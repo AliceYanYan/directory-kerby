@@ -305,6 +305,7 @@ public abstract class KdcRequest {
     public void process() throws KrbException {
         processKdcOptions();
         preauth();
+        System.out.println("finish process");
     }
 
     public abstract void processResponse(KdcRep kdcRep) throws KrbException;

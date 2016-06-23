@@ -26,12 +26,16 @@ import org.apache.kerby.kerberos.kerb.admin.server.kadmin.AdminServerSetting;
 import org.apache.kerby.kerberos.kerb.admin.server.kadmin.AdminServerUtil;
 import org.apache.kerby.kerberos.kerb.admin.server.kpasswd.impl.DefaultInternalPasswdServerImpl;
 import org.apache.kerby.kerberos.kerb.admin.server.kpasswd.impl.InternalPasswdServer;
+import org.apache.kerby.kerberos.kerb.client.KrbClient;
 import org.apache.kerby.kerberos.kerb.client.KrbConfig;
 import org.apache.kerby.kerberos.kerb.identity.backend.BackendConfig;
 import org.apache.kerby.kerberos.kerb.identity.backend.IdentityBackend;
 import org.apache.kerby.kerberos.kerb.server.KdcConfig;
+import org.apache.kerby.kerberos.kerb.type.ticket.TgtTicket;
 
 import java.io.File;
+import java.net.URI;
+import java.net.URL;
 
 /**
  * The implemented Kerberos passwd passwd API.
@@ -139,6 +143,47 @@ public class PasswdServer {
         adminServerSetting = new AdminServerSetting(new KOptions(), new AdminServerConfig(),
             new KdcConfig(), new BackendConfig());
     }
+
+
+    /**
+     *
+     * @param
+     * @throws KrbException
+     */
+    public PasswdServer(URI passwdServerUrl, URI backendUrl, URI krbUrl) throws KrbException {
+
+        File serverFile = new File(passwdServerUrl);
+
+        File backendFile = new File(backendUrl);
+
+        File krbFile = new File(krbUrl);
+        PasswdServerConfig tmpPasswdServerConfig =
+            PasswdServerUtil.getPasswdServerConfig(serverFile);
+        if (tmpPasswdServerConfig == null) {
+            tmpPasswdServerConfig = new PasswdServerConfig();
+        }
+        this.passwdServerConfig = tmpPasswdServerConfig;
+
+        BackendConfig tmpBackendConfig = PasswdServerUtil.getBackendConfig(backendFile);
+        if (tmpBackendConfig == null) {
+            tmpBackendConfig = new BackendConfig();
+        }
+        tmpBackendConfig.setConfDir(null);
+        this.backendConfig = tmpBackendConfig;
+
+        KrbConfig tmpKrbConfig =
+            PasswdServerUtil.getKrbConfig(krbFile);
+        if (tmpKrbConfig == null) {
+            tmpKrbConfig = new KrbConfig();
+        }
+        this.krbConfig = tmpKrbConfig;
+
+        startupOptions = new KOptions();
+        passwdServerSetting = new PasswdServerSetting(startupOptions,
+            passwdServerConfig, backendConfig, krbConfig);
+        adminServerSetting = getAdminServerSetting(null); //////
+    }
+
 
     /**
      * Set Passwd realm for ticket request
@@ -271,6 +316,28 @@ public class PasswdServer {
         }
         return innerPasswdServer.getIdentityBackend();
     }
+
+    /**
+     * PasswdServer interact with KDC.
+     * To get authentication (request tgt).
+     */
+    public void login(KrbClient krbClient) throws KrbException {
+        //acquire service key from kdc
+        //PasswdServerUtil.getKrbClient(passwdServerSetting.getKrbConfig());
+
+        krbClient.setAllowTcp(true);
+        krbClient.setAllowUdp(true);
+        krbClient.init();
+        TgtTicket tgtTicket = PasswdServerUtil.getTgtTicket(
+                                krbClient, "drankye", "123456");
+        /** set service key.
+         *  The tgt session key between kpasswd server and kdc
+         *  is the service key of kpasswd service.
+         */
+        passwdServerSetting.setServiceKey(tgtTicket.getSessionKey());
+    }
+
+
 
     /**
      * Initialize.

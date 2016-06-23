@@ -68,6 +68,7 @@ public abstract class KrbHandler {
      */
     public void handleRequest(KdcRequest kdcRequest, boolean tryNextKdc) throws KrbException {
         if (!tryNextKdc || kdcRequest.getKdcReq() == null) {
+            System.out.println("!try next kdc");
             kdcRequest.process();
         }
         KdcReq kdcReq = kdcRequest.getKdcReq();
@@ -85,8 +86,10 @@ public abstract class KrbHandler {
         }
         KrbCodec.encode(kdcReq, requestMessage);
         requestMessage.flip();
+        System.out.println("before send message");
         try {
             sendMessage(kdcRequest, requestMessage);
+            System.out.println("send message successful");
         } catch (IOException e) {
             throw new KrbException("sending message failed", e);
         }
@@ -101,7 +104,7 @@ public abstract class KrbHandler {
      */
     public void onResponseMessage(
             KdcRequest kdcRequest, ByteBuffer responseMessage) throws KrbException {
-
+        System.out.println("on response message");
         KrbMessage kdcRep = null;
         try {
             kdcRep = KrbCodec.decodeMessage(responseMessage);

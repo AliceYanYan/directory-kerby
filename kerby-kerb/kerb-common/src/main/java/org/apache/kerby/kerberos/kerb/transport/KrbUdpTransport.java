@@ -56,9 +56,11 @@ public class KrbUdpTransport
 
     @Override
     public ByteBuffer receiveMessage() throws IOException {
+        System.out.println("udp receive message 2");
         recvBuffer.clear();
         channel.receive(recvBuffer);
         recvBuffer.flip();
+        System.out.println("recvBuffer: " + recvBuffer.toString());
         return recvBuffer;
     }
 

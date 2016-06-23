@@ -40,6 +40,7 @@ public class KdcUdpTransport extends KrbUdpTransport {
 
     @Override
     public synchronized ByteBuffer receiveMessage() throws IOException {
+        System.out.println("udp receive message");
         long timeout = 1000; // TODO: configurable or option
         ByteBuffer message;
         try {

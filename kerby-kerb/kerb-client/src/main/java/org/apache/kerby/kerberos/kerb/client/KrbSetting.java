@@ -56,6 +56,7 @@ public class KrbSetting {
         if (kdcHost == null) {
             return krbConfig.getKdcHost();
         }
+        System.out.println("kdcHost: " + kdcHost);
         return kdcHost;
     }
 

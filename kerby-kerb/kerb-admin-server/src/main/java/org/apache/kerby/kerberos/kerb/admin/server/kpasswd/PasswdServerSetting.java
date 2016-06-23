@@ -23,6 +23,7 @@ import org.apache.kerby.KOptions;
 import org.apache.kerby.kerberos.kerb.KrbException;
 import org.apache.kerby.kerberos.kerb.client.KrbConfig;
 import org.apache.kerby.kerberos.kerb.identity.backend.BackendConfig;
+import org.apache.kerby.kerberos.kerb.type.base.EncryptionKey;
 
 /**
  * Passwd Server setting that combines startup options and passwd config.
@@ -32,6 +33,9 @@ public class PasswdServerSetting {
     private final PasswdServerConfig passwdServerConfig;
     private final BackendConfig backendConfig;
     private final KrbConfig krbConfig;
+
+    private EncryptionKey serviceKey;
+
 
     /**
      * PasswdServerSetting constructor
@@ -194,4 +198,13 @@ public class PasswdServerSetting {
         }
         return passwdRealm;
     }
+
+    public void setServiceKey(EncryptionKey serviceKey) {
+        this.serviceKey = serviceKey;
+    }
+
+    public EncryptionKey getServiceKey() {
+        return serviceKey;
+    }
+
 }

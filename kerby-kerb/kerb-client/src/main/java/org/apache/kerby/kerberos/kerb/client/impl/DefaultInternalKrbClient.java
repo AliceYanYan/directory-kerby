@@ -94,7 +94,6 @@ public class DefaultInternalKrbClient extends AbstractInternalKrbClient {
                 transport.release();
             }
         }
-
     }
 
     private void sendIfPossible(KdcRequest request, String kdcString, KrbSetting setting,
@@ -106,6 +105,7 @@ public class DefaultInternalKrbClient extends AbstractInternalKrbClient {
         network.setSocketTimeout(setting.getTimeout());
         transport = network.connect(tpair);
         request.setSessionData(transport);
+        System.out.println("before handle request"); // TODO-------------
         krbHandler.handleRequest(request, tryNextKdc);
     }
 

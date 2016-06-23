@@ -36,19 +36,19 @@ public class AbstractInternalPasswdServer implements InternalPasswdServer {
     private boolean started;
     private final PasswdServerConfig passwdConfig;
     private final BackendConfig backendConfig;
-    private final PasswdServerSetting passwdSetting;
+    private final PasswdServerSetting passwdServerSetting;
     private IdentityBackend backend;
     private IdentityService identityService;
 
     public AbstractInternalPasswdServer(PasswdServerSetting passwdSetting) {
-        this.passwdSetting = passwdSetting;
+        this.passwdServerSetting = passwdSetting;
         this.passwdConfig = passwdSetting.getPasswdServerConfig();
         this.backendConfig = passwdSetting.getBackendConfig();
     }
 
     @Override
     public PasswdServerSetting getSetting() {
-        return passwdSetting;
+        return passwdServerSetting;
     }
 
     public boolean isStarted() {

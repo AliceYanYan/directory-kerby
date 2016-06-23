@@ -51,6 +51,7 @@ public class KrbTcpTransport
 
     @Override
     public ByteBuffer receiveMessage() throws IOException {
+        System.out.println("tcp receive message");
         int msgLen = inputStream.readInt();
         if (msgLen > 0) {
             inputStream.readFully(messageBuffer, 0, msgLen);

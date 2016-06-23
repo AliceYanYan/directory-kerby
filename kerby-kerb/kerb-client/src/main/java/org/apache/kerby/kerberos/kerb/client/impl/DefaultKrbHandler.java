@@ -36,11 +36,14 @@ public class DefaultKrbHandler extends KrbHandler {
     public void handleRequest(KdcRequest kdcRequest, boolean tryNextKdc) throws KrbException {
         KrbTransport transport = (KrbTransport) kdcRequest.getSessionData();
         transport.setAttachment(kdcRequest);
-
+        System.out.println("after transport set attach");
         super.handleRequest(kdcRequest, tryNextKdc);
+
         ByteBuffer receivedMessage = null;
         try {
+            System.out.println("before receive message");
             receivedMessage = transport.receiveMessage();
+            System.out.println("after receive message");
         } catch (IOException e) {
             throw new KrbException("Receiving response message failed", e);
         }

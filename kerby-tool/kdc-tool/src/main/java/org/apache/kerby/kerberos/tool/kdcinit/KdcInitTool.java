@@ -29,7 +29,8 @@ import java.io.File;
 /**
  * A tool to initialize KDC backend for the first time when setup the KDC.
  */
-public class KdcInitTool {
+public class
+    KdcInitTool {
     private LocalKadmin kadmin;
     private static File keytabFile;
 

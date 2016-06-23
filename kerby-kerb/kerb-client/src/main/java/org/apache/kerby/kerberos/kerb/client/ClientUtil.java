@@ -115,10 +115,11 @@ public final class ClientUtil {
      */
     public static TransportPair getTransportPair(
             KrbSetting setting, String kdcString) throws KrbException, IOException {
+        System.out.println("kdcString: " + kdcString);
         TransportPair result = new TransportPair();
         int tcpPort = setting.checkGetKdcTcpPort();
         int udpPort = setting.checkGetKdcUdpPort();
-
+System.out.println("tcp: " + tcpPort + ", udp: " + udpPort);
         int port = 0;
         String kdc;
         String portStr = null;
@@ -172,6 +173,7 @@ public final class ClientUtil {
             result.udpAddress = new InetSocketAddress(
                     kdc, udpPort);
         }
+        System.out.println("kdc: " + kdc + "portStr: " + portStr);
         return result;
     }
 
@@ -203,6 +205,7 @@ public final class ClientUtil {
         kdcList.add(krbSetting.getKdcHost());
         /*get the kdc realm */
         String realm = krbSetting.getKdcRealm();
+        System.out.println("real: " + realm);
         if (realm != null) {
             KrbConfig krbConfig = krbSetting.getKrbConfig();
             List<Object> kdcs = krbConfig.getRealmSectionItems(realm, "kdc");
@@ -211,7 +214,9 @@ public final class ClientUtil {
                     kdcList.add(object != null ? object.toString() : null);
                 }
             }
-
+if (kdcs == null) {
+    System.out.println("kdcs == null");
+}
             if (kdcList == null) {
                 LOG.info("Cannot get kdc for realm " + realm);
             }

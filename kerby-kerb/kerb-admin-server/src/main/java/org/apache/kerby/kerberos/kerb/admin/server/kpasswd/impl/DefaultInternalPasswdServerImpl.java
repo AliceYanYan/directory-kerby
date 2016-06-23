@@ -62,7 +62,7 @@ public class DefaultInternalPasswdServerImpl extends AbstractInternalPasswdServe
             @Override
             protected void onNewTransport(KrbTransport transport) {
                 DefaultPasswdServerHandler passwdHandler =
-                    new DefaultPasswdServerHandler(passwdServerContext, adminServerContext, transport);
+                    new DefaultPasswdServerHandler(getSetting(), adminServerContext, transport);
                 executor.execute(passwdHandler);
             }
         };
@@ -76,18 +76,6 @@ public class DefaultInternalPasswdServerImpl extends AbstractInternalPasswdServe
     private void prepareHandler() throws KrbException {
         passwdServerContext = new PasswdServerContext(getSetting());
         passwdServerContext.setIdentityService(getIdentityService());
-        //acquire service key from kdc
-        KrbClient krbClient = PasswdServerUtil.getKrbClient(
-                            passwdServerContext.getPasswdServerSetting().getKrbConfig());
-        krbClient.init();
-        TgtTicket tgtTicket = PasswdServerUtil.getTgtTicket(
-                            krbClient, "kpasswordClient", "123456");
-        /** set service key.
-         *  The tgt session key between kpasswd server and kdc
-         *  is the service key of kpasswd service.
-         */
-        passwdServerContext.setServiceKey(tgtTicket.getSessionKey());
-
     }
 
     @Override

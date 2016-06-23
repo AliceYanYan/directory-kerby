@@ -17,40 +17,29 @@
  *  under the License.
  *
  */
-package org.apache.kerby.kerberos.kerb.admin.server;
+package org.apache.kerby.kerberos.kerb.server;
 
 import org.apache.kerby.kerberos.kerb.KrbException;
 import org.apache.kerby.kerberos.kerb.admin.server.kpasswd.PasswdServer;
 import org.apache.kerby.kerberos.kerb.admin.server.kpasswd.PasswdServerConfig;
-import org.apache.kerby.util.OSUtil;
+import org.junit.Test;
 
 import java.io.File;
+import java.net.URI;
+import java.net.URL;
 
 /**
- * A running tool for password server.
- * Allow both tcp and udp.
- * tcp port: 464
- * udp port: 464
+ * To test passwd server inter act with kdc.
  */
-public class PasswdServerInit {
-    private static final String USAGE = (OSUtil.isWindows()
-        ? "Usage: bin\\kpasswdServer.cmd" : "Usage: sh bin/kpasswdServer.sh")
-        + " <conf-file>\n"
-        + "\tExample:\n"
-        + "\t\t"
-        + (OSUtil.isWindows()
-        ? "bin\\kpasswdServer.cmd" : "sh bin/kpasswdServer.sh")
-        + " conf\n";
+public class PasswdServerTest extends KdcTestBase {
 
-    public static void main(String[] args) throws Exception {
 
-        if (args.length != 1) {
-            System.err.println(USAGE);
-            System.exit(1);
-        }
-
-        String confDirPath = args[0];
-        PasswdServer passwdServer = new PasswdServer(new File(confDirPath));
+    @Test
+    public void passwdServerLoginTest() throws Exception {
+        URL passwdServerUrl = PasswdServerTest.class.getResource("/kpasswdServer.conf");
+        URL backendUrl = PasswdServerTest.class.getResource("/kpasswdBackend.conf");
+        URL krbUrl = PasswdServerTest.class.getResource("/krb5.conf");
+        PasswdServer passwdServer = new PasswdServer(passwdServerUrl.toURI(), backendUrl.toURI(), krbUrl.toURI());
         PasswdServerConfig passwdServerConfig = passwdServer.getPasswdServerConfig();
 
         passwdServer.setPasswdHost(passwdServerConfig.getPasswdHost());
@@ -59,14 +48,14 @@ public class PasswdServerInit {
         passwdServer.setPasswdServerPort(passwdServerConfig.getPasswdPort());
 
         try {
-            //passwdServer.login();
-            passwdServer.init();
+            passwdServer.login(getKrbClient());
         } catch (KrbException e) {
-            System.err.println("Errors occurred when start password server:  " + e.getMessage());
+            System.err.println("Errors occurred when password server login:  " + e.getMessage());
             System.exit(2);
         }
-        passwdServer.start();
-        System.out.println("Password server started!");
     }
-}
 
+
+
+
+}

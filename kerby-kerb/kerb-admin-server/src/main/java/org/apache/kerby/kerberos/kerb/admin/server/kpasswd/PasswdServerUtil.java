@@ -48,8 +48,8 @@ public final class PasswdServerUtil {
      * @return passwd configuration
      * @throws KrbException e.
      */
-    public static PasswdServerConfig getPasswdServerConfig(File confDir) throws KrbException {
-        File passwdConfFile = new File(confDir, "kpasswdServer.conf");
+    public static PasswdServerConfig getPasswdServerConfig(File passwdConfFile) throws KrbException {
+        //File passwdConfFile = new File(confDir, "kpasswdServer.conf");
         if (passwdConfFile.exists()) {
             PasswdServerConfig passwdServerConfig = new PasswdServerConfig();
             try {
@@ -70,8 +70,8 @@ public final class PasswdServerUtil {
      * @return backend configuration
      * @throws KrbException e.
      */
-    public static BackendConfig getBackendConfig(File confDir) throws KrbException {
-        File backendConfigFile = new File(confDir, "kpasswdBackend.conf");
+    public static BackendConfig getBackendConfig(File backendConfigFile) throws KrbException {
+        //File backendConfigFile = new File(confDir, "kpasswdBackend.conf");
         if (backendConfigFile.exists()) {
             BackendConfig backendConfig = new BackendConfig();
             try {
@@ -92,8 +92,8 @@ public final class PasswdServerUtil {
      * @return passwd configuration
      * @throws KrbException e.
      */
-    public static KrbConfig getKrbConfig(File confDir) throws KrbException {
-        File krbConfFile = new File(confDir, "krb5.conf");
+    public static KrbConfig getKrbConfig(File krbConfFile) throws KrbException {
+        //File krbConfFile = new File(confDir, "krb5.conf");
         if (krbConfFile.exists()) {
             KrbConfig krbConfig = new KrbConfig();
             try {
@@ -168,9 +168,9 @@ public final class PasswdServerUtil {
         return result;
     }
 
-    public static EncryptionKey getServiceKey(PasswdServerContext passwdServerContext,
+    public static EncryptionKey getServiceKey(PasswdServerSetting passwdServerSetting,
                              EncryptionType encryptionType, int kvno) throws KrbException {
-        EncryptionKey serviceKey = passwdServerContext.getServiceKey();
+        EncryptionKey serviceKey = passwdServerSetting.getServiceKey();
         if (serviceKey.getKeyType() != encryptionType || serviceKey.getKvno() != kvno) {
             throw new KrbException("Service key does not match.");
         }

@@ -45,19 +45,18 @@ import java.nio.ByteBuffer;
  */
 public class PasswdServerHandler {
     private static final Logger LOG = LoggerFactory.getLogger(PasswdServerHandler.class);
-    private final PasswdServerContext passwdServerContext;
+    private final PasswdServerSetting passwdServerSetting;
     private final AdminServerContext adminServerContext;
 
     /**
      * Constructor with passwd context.
      *
-     * @param passwdServerContext passwd passwd context
+     * @param passwdServerSetting passwd server setting
      */
-    public PasswdServerHandler(PasswdServerContext passwdServerContext,
+    public PasswdServerHandler(PasswdServerSetting passwdServerSetting,
                                AdminServerContext adminServerContext) {
-        this.passwdServerContext = passwdServerContext;
+        this.passwdServerSetting = passwdServerSetting;
         this.adminServerContext = adminServerContext;
-        LOG.info("Passwd context realm:" + this.passwdServerContext.getPasswdRealm());
         LOG.info("Admin context realm:" + this.adminServerContext.getAdminRealm());
     }
 
@@ -93,7 +92,7 @@ public class PasswdServerHandler {
         int kvno = apReq.getTicket().getEncryptedEncPart().getKvno();
 
         //get server key
-        EncryptionKey serviceKey = PasswdServerUtil.getServiceKey(passwdServerContext, encryptionType, kvno);
+        EncryptionKey serviceKey = PasswdServerUtil.getServiceKey(passwdServerSetting, encryptionType, kvno);
 
         //verify apReq
         ApRequest.validate(serviceKey, apReq);

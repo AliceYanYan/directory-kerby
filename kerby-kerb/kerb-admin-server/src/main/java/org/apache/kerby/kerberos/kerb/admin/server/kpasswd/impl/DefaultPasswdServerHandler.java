@@ -20,8 +20,8 @@
 package org.apache.kerby.kerberos.kerb.admin.server.kpasswd.impl;
 
 import org.apache.kerby.kerberos.kerb.admin.server.kadmin.AdminServerContext;
-import org.apache.kerby.kerberos.kerb.admin.server.kpasswd.PasswdServerContext;
 import org.apache.kerby.kerberos.kerb.admin.server.kpasswd.PasswdServerHandler;
+import org.apache.kerby.kerberos.kerb.admin.server.kpasswd.PasswdServerSetting;
 import org.apache.kerby.kerberos.kerb.transport.KrbTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,9 +34,9 @@ public class DefaultPasswdServerHandler extends PasswdServerHandler implements R
     private static Logger logger = LoggerFactory.getLogger(DefaultPasswdServerHandler.class);
     private final KrbTransport transport;
 
-    public DefaultPasswdServerHandler(PasswdServerContext passwdServerContext,
+    public DefaultPasswdServerHandler(PasswdServerSetting passwdServerSetting,
                 AdminServerContext adminServerContext, KrbTransport transport) {
-        super(passwdServerContext, adminServerContext);
+        super(passwdServerSetting, adminServerContext);
         this.transport  = transport;
     }
 
